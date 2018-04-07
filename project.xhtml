@@ -1,0 +1,150 @@
+<?xml version="1.0" ?>
+<!DOCTYPE html  PUBLIC '-//W3C//DTD XHTML 1.0 Transitional//EN'  'http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd'>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<title>default files</title>
+<style type="text/css">
+	.filename {font-weight:bold}
+	subproject {display:list-item}
+	python, .python {display:none}
+	h2 {font-size:150%;font-weight:bold;border-bottom:1px solid black;width:100%}
+	.expanded:before {color:green;content:'\25BC';font-size:10px;width:21px;cursor:pointer;border:3px outset #99ff99;background:#99ff99}
+	description {display:block}
+	.childarea {margin-left:7px;padding-left:7px;border-left:3px ridge #99ff99;padding-top:0px}
+	h1, name {display:block;font-size:200%;font-weight:bold;border-bottom:2px solid black;width:100%}
+	.indent, files {display:block;margin-right:1.5cm;margin-left:1.5cm}
+	.shrunken:before {color:green;content:'\25BA';font-size:10px;width:21px;cursor:pointer;border:3px outset #99ff99;background:#99ff99}
+	filename {font-weight:bold}
+	.all {background:#bbffaa}
+	.partial {background:#fff088}
+	.none {background:#ffaaaa}
+</style>
+<script language="JavaScript" type="text/javascript">
+function showHide(node,shouldShow) {
+	var show=null;
+	var twirlie=node.childNodes[0]
+	if(twirlie.getAttribute('class')=='expanded'&amp;&amp;(shouldShow==null||shouldShow==0)) {
+		show=0;
+		twirlie.setAttribute('class','shrunken');
+	} else if(twirlie.getAttribute('class')=='shrunken'&amp;&amp;(shouldShow==null||shouldShow==1)) {
+		show=1;
+		twirlie.setAttribute('class','expanded');
+	}
+	if(show!=null) {
+		var i;
+		for(i=2;i&lt;node.childNodes.length;i++) {
+			var e=node.childNodes[i];
+			if(e.nodeType!=1) {
+				// Do nothing. Only interested in elements.
+			} else if(show) {
+				e.setAttribute('style',e.getAttribute('oldStyle'));
+			} else {
+				e.setAttribute('oldStyle',e.getAttribute('style'));
+				e.setAttribute('style','display:none');
+			}
+		}
+	}
+}
+</script></head>
+<body class="indent">
+<projects type="parent"><project file="../project.xhtml"><a href="../project.xhtml" style="font-weight:bold">volitile</a></project></projects>
+<name>default files</name>
+<description>
+	This is an tool quickly create default files to get you started easily without the unnecessary steps
+</description>
+
+<h2>Known issues</h2>
+<div style="indent">
+	<li>square templates do not work - I don't know whether to bother anymore since python templates are so much better</li>
+	<li>replacements can be made to the filename, but after changing, the files list becomes incorrect (for now, do this last)</li>
+</div>
+
+<h2>plain templates</h2>
+<div style="indent">
+	These are quick and simple "copy this file" templates.  Just throw the file in, run (as administrator) registerWinExplorer.bat and you're done.
+	<br />
+	Such an obvious thing to do, yet it is strangely lacking from Windows.
+</div>
+
+<h2>square templates</h2>
+<div style="indent">
+	An old idea to have an intermediate stage between plain templates and pythonTemplates.<br />
+	<br />
+	It is currently broken, and I don't know if I care to bring it back.
+</div>
+
+<h2>python templates</h2>
+<div style="indent">
+	These allow for very rich and sophisticated templates to be written.  They achieve this by using simple variables
+	that also allow embedding of python snippets.<br />
+	<br />
+	To create one, add a new directory under "pythonTemplates" with the name of the template.<br />
+	In this directory, add any replacement files and resources as well as a template.ini file.<br />
+	<br />
+	To install the template(s) into the system menu, run (as administrator) registerWinExplorer.bat
+</div>
+
+<h2>python template.ini</h2>
+<div style="indent">
+[stuff]<br />
+ &nbsp; &nbsp; icon="" ......... TODO: the icon to display in the system menu (you may want to add this to "nocopy" as well)<br />
+ &nbsp; &nbsp; nocopy="" ....... TODO: ignore certain files during copying<br />
+<br />
+[variable]<br />
+ &nbsp; &nbsp; name="" ......... the name of the replacement (in ui)<br />
+ &nbsp; &nbsp; description="" .. Description of the replacement (ui tooltip)<br />
+ &nbsp; &nbsp; uitype="" ....... type of ui element (none,field,textarea,... more to come) (default=field)<br />
+ &nbsp; &nbsp; value="" ........ default value<br />
+ &nbsp; &nbsp; preReplace="" ... code to run after the vars window, but before the replacement<br />
+<br />
+[replace]<br />
+ &nbsp; &nbsp; find="" ........... what to replace (usually something unique like [[name]] is a good idea)<br />
+  replace="" ........ what to replace it with<br />
+ &nbsp; &nbsp; files=[""] ........ which files to perform replacement in (default=*, meaning all files)<br />
+<br />
+[ignore]<br />
+ &nbsp; &nbsp; files=[""] ........ which files to not copy over (useful if you have code in here) (default=['template.ini'])<br />
+<br />
+Remember, everything on the right hand side of = is python code, so you can do all kinds of useful
+and/or unfortunate things with this.<br />
+<br />
+If there are no variables that are not none, will not show the ui<br />
+<br />
+There is a special variable called openAfter that will cause an external command to be run after the thing is created.<br />
+You can set its value to "os" or "default" to use the system default opener for this type.<br />
+<br />
+Any line can be commented out by beginning it with a # character
+<br />
+Python for all items is evaluated IN ORDER, so you may want to arrange things based on any external changes they make
+</div>
+
+<h2>how do I...</h2>
+<div style="indent">
+	<li>Create a file programatically rather than from a template file?</li>
+	<div>Check out the "png image" template.</div>
+	<br />
+	<li>Automatically open the file after it is created?</li>
+	<div>Set the special variable named "openAfter".  You can either set this as uitype="hidden" or let the user change it.</div>
+	<br />
+	<li>Not have a pop-up window?</li>
+	<div>Simply set all variables to uitype="hidden"</div>
+	<br />
+	<li>Validate or change the value type of a variable?</li>
+	<div>Use the preReplace value with some code, in the general form:<br />preReplace=my_convert(variable_name.value)<br />Check out the "png image" template.</div>
+	<br />
+	<li>Have multiple lines of python?</li>
+	<div>Simply end each line with \</div>
+	<br />
+	<li>Access something from the [stuff] section in a script?</li>
+	<div>Use self.  For example, "self.icon" works.</div>
+	<br />
+	<li>Include an external python library?</li>
+	<div>With the python "include" statement as normal.  NOTE: "include * from x" might not work.  Rather, use the form "include x" and then "x.whatever()"</div>
+	<br />
+	<li>Execute code in a different order from what the ui is?</li>
+	<div>Order your variables according to the ui order, then add extra uitype="hidden" variables to do the processing you want.</div>
+	<br />
+</div>
+
+</body>
+</html>

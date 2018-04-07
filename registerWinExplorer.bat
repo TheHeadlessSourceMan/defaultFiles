@@ -1,0 +1,1 @@
+cmd /k python %~dp0\registerWinExplorer.py

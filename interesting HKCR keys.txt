@@ -1,0 +1,28 @@
+mailto - demonstrates magic "Url Protocol" key
+lnkfile - not only is a shortcut, but demonstrates magic "IsShortcut" and "NeverShowExt"
+* - create menus for all files
+Drive - fiddle with disk drives
+Folder - fiddle with folders
+Directory - how is this different than folder?
+Unknown - unassociated file types
+.URL - internet shortcuts
+.zip - "PerceivedType=compressed" magic
+
+shellex\DropHandler for drag and drop support
+
+HKEY_CLASSES_ROOT\Wow6432Node\CLSID\{63da6ec0-2e98-11cf-8d82-444553540000} - (and all "msieftp.exe") how windows does FTP as folders
+
+zip folders is a {E88DCCE0-B7B3-11d1-A9F0-00AA0060FA31}
+	and "%SystemRoot%\system32\zipfldr.dll" implements {00021490-0000-0000-C000-000000000046}
+	There's also a ShellFolder magic that seems interesting
+	
+Folder icons come from C:\Windows\System32\imageres.dll so you can search by image
+Other ShellFolder classes:
+	HKEY_CLASSES_ROOT\CLSID\{00020D75-0000-0000-C000-000000000046}
+	HKEY_CLASSES_ROOT\CLSID\{00C6D95F-329C-409a-81D7-C46C66EA7F33} (some kind of mobile device)
+	-- other control panel extensions --
+	HKEY_CLASSES_ROOT\CLSID\{0AFACED1-E828-11D1-9187-B532F1E9575D} (shortcut to folder)
+	
+More info here:
+https://msdn.microsoft.com/en-us/library/windows/desktop/cc144171(v=vs.85).aspx
+https://msdn.microsoft.com/en-us/library/windows/desktop/cc144067(v=vs.85).aspx
