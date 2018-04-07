@@ -1,8 +1,6 @@
----
-title: default files
----
+# default files
 
-This is an tool quickly
+This is a tool to quickly
 create default files to get you started easily without the unnecessary
 steps.  
 
@@ -43,30 +41,24 @@ registerWinExplorer.bat
 python template.ini
 -------------------
 ```ini
-\[stuff\]\
-    icon=\"\" \...\...\... TODO: the icon to display in the system menu
-(you may want to add this to \"nocopy\" as well)\
-    nocopy=\"\" \...\.... TODO: ignore certain files during copying\
-\
-\[variable\]\
-    name=\"\" \...\...\... the name of the replacement (in ui)\
-    description=\"\" .. Description of the replacement (ui tooltip)\
-    uitype=\"\" \...\.... type of ui element (none,field,textarea,\...
-more to come) (default=field)\
-    value=\"\" \...\..... default value\
-    preReplace=\"\" \... code to run after the vars window, but before
-the replacement\
-\
-\[replace\]\
-    find=\"\" \...\...\..... what to replace (usually something unique
-like \[\[name\]\] is a good idea)\
-replace=\"\" \...\..... what to replace it with\
-    files=\[\"\"\] \...\..... which files to perform replacement in
-(default=\*, meaning all files)\
-\
-\[ignore\]\
-    files=\[\"\"\] \...\..... which files to not copy over (useful if
-you have code in here) (default=\[\'template.ini\'\])\
+[stuff]
+    icon="" ......... TODO: the icon to display in the system menu (you may want to add this to "nocopy" as well)
+    nocopy="" ....... TODO: ignore certain files during copying
+
+[variable]
+    name="" ......... the name of the replacement (in ui)
+    description="" .. Description of the replacement (ui tooltip)
+    uitype="" ....... type of ui element (none,field,textarea,...more to come) (default=field)
+    value="" ........ default value
+    preReplace="" ... code to run after the vars window, but before the replacement
+
+[replace]
+    find="" ........... what to replace (usually something unique like [[name]] is a good idea)
+    replace="" ........ what to replace it with
+    files=[""] ........ which files to perform replacement in (default=*, meaning all files)
+
+[ignore]
+    files=[""] ........ which files to not copy over (useful if you have code in here) (default=['template.ini'])
 ```
 Remember, everything on the right hand side of = is python code, so you
 can do all kinds of useful and/or unfortunate things with this.\
@@ -93,40 +85,40 @@ list becomes incorrect (for now, do this last)
 
 how do I\...
 ------------
-**Create a file programatically rather than from a template file?
+**Create a file programatically rather than from a template file?**
 
 Check out the \"png image\" template.
 
-**Automatically open the file after it is created?
+**Automatically open the file after it is created?**
 
 Set the special variable named \"openAfter\". You can either set this as
 uitype=\"hidden\" or let the user change it.
 
-**Not have a pop-up window?
+**Not have a pop-up window?**
 
 Simply set all variables to uitype=\"hidden\"
 
-**Validate or change the value type of a variable?
+**Validate or change the value type of a variable?**
 
 Use the preReplace value with some code, in the general form:\
 preReplace=my\_convert(variable\_name.value)\
 Check out the \"png image\" template.
 
-**Have multiple lines of python?
+**Have multiple lines of python?**
 
 Simply end each line with \\
 
-**Access something from the \[stuff\] section in a script?
+**Access something from the \[stuff\] section in a script?**
 
 Use self. For example, \"self.icon\" works.
 
-**Include an external python library?
+**Include an external python library?**
 
 With the python \"include\" statement as normal. NOTE: \"include \* from
 x\" might not work. Rather, use the form \"include x\" and then
 \"x.whatever()\"
 
-**Execute code in a different order from what the ui is?
+**Execute code in a different order from what the ui is?**
 
 Order your variables according to the ui order, then add extra
 uitype=\"hidden\" variables to do the processing you want.
