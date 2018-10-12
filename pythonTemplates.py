@@ -1,9 +1,14 @@
-import os,shutil,datetime
-import glob,re
+#!/usr/bin/env
+# -*- coding: utf-8 -*-
+"""
+A template system wherein python code can be embedded directly into
+the template
+"""
+import os
 import collections
-from variable import *
 from EzFs import ezFs
 from EzFs import baseFs
+from variable import *
 
 
 ILLEGAL_FILENAME_CHARS=r'*"/:;|=,\\'
@@ -15,39 +20,57 @@ def _filenameFixer(filename):
 		if filename.find(i)>0:
 			filename=filename.replace(i,'_')
 	return filename
-	
-	
-class PythonTemplates:
-	# TODO: need a better place to keep this because it certainly doesn't belong 
+
+
+class PythonTemplates(object):
+	"""
+	A template system wherein python code can be embedded directly into
+	the template
+	"""
+
+	# TODO: need a better place to keep this because it certainly doesn't belong
 	# in the python egg install directory!
 	#DIRECTORY=os.path.abspath(__file__).rsplit(os.sep,1)[0]+os.sep+'pythonTemplates'
 	DIRECTORY=r'C:\backed_up\computers\programming\defaultFiles\pythonTemplates'
-	
+
 	def __init__(self):
 		pass
-		
+
 	@staticmethod
 	def getTemplate(name):
+		"""
+		get a python template by name
+		"""
 		if os.path.isfile(PythonTemplates.DIRECTORY+os.sep+name+os.sep+'template.ini'):
 			return Template(name)
 		return None
-		
+
 	@staticmethod
 	def getTemplateNames():
+		"""
+		list all installed python templates
+		"""
 		ret=[]
 		for f in os.listdir(PythonTemplates.DIRECTORY):
 			if os.path.isfile(PythonTemplates.DIRECTORY+os.sep+f+os.sep+'template.ini'):
 				ret.append(f)
 		return ret
-		
-class Replace:
+
+class Replace(object):
+	"""
+	Represents a replacement tag in the .ini
+	"""
+
 	def __init__(self):
 		self.find=""
 		self.replace=""
 		self.files="'*'"
 		self.__needsEval__=True
-		
+
 	def eval(self,locals=None):
+		"""
+		evaluate the replacement as python code
+		"""
 		if self.__needsEval__:
 			self.__needsEval__=False
 			for k in ['find','replace','files']:
@@ -61,32 +84,45 @@ class Replace:
 						raise e
 					setattr(self,k,v)
 
-	def __str__(self):
+	def __repr__(self):
+		"""
+		get a string representation of this replacement
+		"""
 		result=[]
 		for k in ['find','replace','files']:
 			v=getattr(self,k)
 			result.append(k+'='+str(v))
 		return '\n'.join(result)
-			
-class Template:
-	
+
+
+class Template(object):
+	"""
+	A single python template
+	"""
+
 	def __init__(self,name):
 		self.name=name
 		self.replaces=[]
 		self.variables=[]
 		self.load(name)
-		
+
 	def getFirstFile(self):
+		"""
+		Get the first available filename
+		"""
 		ez=ezFs.EzFs(self.getDir())
 		filename=None
 		for r in self.replaces:
 			files=ez.glob(r.files)
-			if len(files)>0:
+			if files:
 				filename=files[0].abspath()
 				break
 		return filename
-	
+
 	def getVariables(self):
+		"""
+		Get all the variable objects
+		"""
 		variables=collections.OrderedDict()
 		for v in self.variables:
 			variables['self']=self # reset every time in case something doesn't play nice
@@ -96,16 +132,25 @@ class Template:
 			if not isinstance(v,Variable):
 				del variables[k]
 		return variables
-		
-	def shouldIgnore(self,file):
-		if file=='template.ini':
+
+	def shouldIgnore(self,filename):
+		"""
+		Whether this file should be ignored
+		"""
+		if filename=='template.ini':
 			return True
 		return False
-	
+
 	def getDir(self):
+		"""
+		get the directory
+		"""
 		return PythonTemplates.DIRECTORY+os.sep+self.name
-	
+
 	def load(self,name):
+		"""
+		load the template ini file
+		"""
 		self.name=name
 		f=open(PythonTemplates.DIRECTORY+os.sep+name+os.sep+'template.ini','r')
 		current=None
@@ -141,40 +186,40 @@ class Template:
 					currentLine='\n'.join(currentLine)
 					# now determine what value we are setting
 					currentLine=[x.strip() for x in currentLine.split('=',1)]
-					if len(currentLine)!=2 or len(currentLine[1])==0 or not hasattr(current,currentLine[0]):
+					if len(currentLine)!=2 or currentLine[1] or not hasattr(current,currentLine[0]):
 						pass
 					else:
 						setattr(current,currentLine[0],currentLine[1])
 					currentLine=[]
-	
+
 	def _replaceFileContents(self,ezFile,find,replace):
 		"""
 		replace the contents of a single file
-		
+
 		find can be a string or a compiled regular expression
 			if it is a string, will try to replace both ascii and unicode strings in the file
-		
+
 		NOTE: does not change the file's name,  use _replaceFileName() for that
 		"""
 		isRe=False
 		try:
 			isRe=(find.__class__.__name__=='SRE_Pattern')
-		except:
+		except Exception:
 			pass
 		f=ezFile.open('rb')
 		data=f.read()
 		f.close()
 		if isRe:
 			data=find.sub(replace,data)
-		elif type(find)==unicode:
-			if type(replace)==str:
+		elif isinstance(find,basestring):
+			if isinstance(replace,basestring):
 				replace=replace.encode('utf-8')
 			data=data.replace(find,replace)
 			try:
 				find=find.encode('ascii')
 				replace=replace.encode('ascii')
 				data=data.replace(find,replace)
-			except:
+			except Exception:
 				pass
 		else:
 			find=str(find)
@@ -185,38 +230,38 @@ class Template:
 				find=find.decode('utf-8')
 				replace=replace.decode('utf-8')
 				data=data.replace(find,replace)
-			except:
+			except Exception:
 				pass
 		f=ezFile.open('wb')
-		f.write(data)
+		f.write(data.encode('utf-8','ignore'))
 		f.close()
-	
+
 	def _replaceFileName(self,ezFile,find,replace):
 		"""
 		perform a replacement within the filename of a single file
-		
+
 		find can be a string or a compiled regular expression
 			if it is a string, will try to replace both ascii and unicode strings in the file
 		"""
 		isRe=False
 		try:
 			isRe=(find.__class__.__name__=='SRE_Pattern')
-		except:
+		except Exception:
 			pass
 		newFilename=ezFile.name.rsplit(os.sep,1)
 		if isRe:
 			newFilename[-1]=find.sub(replace,newFilename[-1])
-		elif type(find)==unicode:
-			if type(replace)==str:
+		elif isinstance(find,unicode):
+			if isinstance(replace,str):
 				replace=replace.encode('utf-8')
-			if type(newFilename[-1]==type(find)):
+			if type(newFilename[-1])==type(find):
 				newFilename[-1]=newFilename[-1].replace(find,replace)
 			try:
 				find=find.encode('ascii')
 				replace=replace.encode('ascii')
 				if type(newFilename[-1]==type(find)):
 					newFilename[-1]=newFilename[-1].replace(find,replace)
-			except:
+			except Exception:
 				pass
 		else:
 			find=str(find)
@@ -228,15 +273,18 @@ class Template:
 				replace=replace.encode('utf-8')
 				if type(newFilename[-1]==type(find)):
 					newFilename[-1]=newFilename[-1].replace(find,replace)
-			except:
+			except Exception:
 				pass
 		# now see if we need to rename it
 		newFilename[-1]=_filenameFixer(newFilename[-1])
 		newFilename=os.sep.join(newFilename)
 		if ezFile.name!=newFilename:
 			ezFile.rename(newFilename)
-	
+
 	def _replaceFileWalker(self,ezFile):
+		"""
+		Walks through the files and does the replacement
+		"""
 		for r in self.replaces: # attempt every replacement on this file
 			if ezFile.path() not in r.files:
 				print 'IGNORED: find',r.find,'within',ezFile.path()
@@ -246,8 +294,11 @@ class Template:
 					self._replaceFileContents(ezFile,r.find,r.replace)
 				# change the file name if necessary
 				self._replaceFileName(ezFile,r.find,r.replace)
-			
+
 	def open(self,atPath,variables):
+		"""
+		open a path
+		"""
 		openAfter=''
 		if variables.has_key('openAfter'):
 			openAfter=variables['openAfter'].value
@@ -262,7 +313,7 @@ class Template:
 						break
 				import win32api
 				atPath=os.path.abspath(atPath)
-				hInstance=win32api.ShellExecute(0,'open',atPath+os.sep+str(variables[n].value),None,atPath,0)
+				_=win32api.ShellExecute(0,'open',atPath+os.sep+str(variables[n].value),None,atPath,0)
 			else:
 				code='openAfter="'+openAfter+'"'
 				try:
@@ -274,7 +325,7 @@ class Template:
 				if cmd!=None and cmd!='':
 					import subprocess
 					subprocess.Popen(cmd,shell=True)
-			
+
 	def modifyFiles(self,atPath,variables):
 		"""
 		replace all variables in the atPath
@@ -301,9 +352,9 @@ class Template:
 			for k,v in localDict.items():
 				if variables.has_key(k):
 					variables[k].value=v
-			if type(r.files)!=list:
+			if isinstance(r.files,basestring):
 				# if it is a string (glob expression), convert it into a list of files now
-				if r.files==None or r.files=='*':
+				if r.files is None or r.files=='*':
 					# this is a special case meaning "everything", including all directories and subdirectories
 					r.files=[f.path() for f in ez.getAll()]
 					r.files.append(ez.path())
@@ -314,7 +365,7 @@ class Template:
 				#print 'FILES IN SET:',r.files
 		# do the replacement!
 		ez.walk(self._replaceFileWalker,context=None,algo='DEAPTH-FIRST')
-		
+
 
 if __name__ == '__main__':
 	import sys

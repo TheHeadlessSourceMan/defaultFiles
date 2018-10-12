@@ -1,48 +1,73 @@
+#!/usr/bin/env
+# -*- coding: utf-8 -*-
+"""
+Walks a set of files calling a callback per each
+"""
 import os
-import zipfile,tarfile
 import io
+import zipfile
+import tarfile
 
-SKIP_EXTENSIONS=['exe','dll','pdb','msi','sys','gif','jpg','jpeg','png','bmp','mp3','qtw','mp4','wav','mid','bmp','obj','com','cpl','xcf','psd','pyc','pyo','pyd','iso','a','o','flv','m4a','so','ttf','fon','pch','wmv']
 
-class FileWalker:
+SKIP_EXTENSIONS=['exe','dll','pdb','msi','sys','gif','jpg','jpeg','png','bmp',
+	'mp3','qtw','mp4','wav','mid','bmp','obj','com','cpl','xcf','psd','pyc',
+	'pyo','pyd','iso','a','o','flv','m4a','so','ttf','fon','pch','wmv']
+
+
+class FileWalker(object):
 	"""
 	walks a set of files and gives you a chance to edit them at will
-	
+
 	The advanced part of this is that you can traverse compressed files as well!
-	
-	Will traverse all combinations of directories, files, 
+
+	Will traverse all combinations of directories, files,
 		zip, 7z, gzip, bzip, and tar files
-		
+
 	TODO: Tar stuff is untested
 	TODO: 7z zip stuff is not finished
 	"""
-	def __init__(self,location,skipExtensions=SKIP_EXTENSIONS,debug=False):
+	def __init__(self,location,skipExtensions=None,debug=False):
 		"""
 		location can be a filename, list, or open file handle
 		"""
+		if skipExtensions==None:
+			skipExtensions=SKIP_EXTENSIONS
 		self.location=location
 		self.skipExtensions=skipExtensions
 		self.debug=debug
-		
+
 	def getVariables(self):
+		"""
+		returns the variables set
+		"""
 		return []
-		
+
 	def traverse(self,dataCB,context=None):
 		"""
 		dataCB is in the form fn(filename,filehandle,context)
 		if dataCB returns None, it keeps going
 		but if it returns anything else, the traversal stops
-		
+
 		where context is any object you want
 		"""
 		return self._traverseFiles('',self.location,dataCB,context)
-		
+
 	def _debug(self,message):
+		"""
+		Debug message logger.
+
+		:param message: the message to log
+		"""
 		if self.debug:
 			print 'FILEWALKER:',message
-		
+
 	def _shouldWalk(self,filename):
-		if self.skipExtensions!=None:
+		"""
+		determine if a filename should be walked
+
+		:param filename: that which to test
+		"""
+		if self.skipExtensions is not None:
 			filename=filename.rsplit('.',1)
 			if len(filename)>1:
 				if filename[-1].lower() in self.skipExtensions:
@@ -58,14 +83,14 @@ class FileWalker:
 			path=c:\foo.zip\bar\baz.html, location=\bar\baz.html
 		"""
 		ret=None
-		if type(location)==list:
+		if hasattr(location,'__iter__') and not isinstance(location,basestring):
 			self._debug('[list]')
 			# Go though a list of files
 			for s in location:
 				ret=self._traverseFiles(path,s,dataCB,context)
-				if ret!=None:
+				if ret is not None:
 					break
-		elif type(location)==str:
+		elif isinstance(location,basestring):
 			# it is a file name
 			if not self._shouldWalk(location):
 				pass
@@ -76,18 +101,18 @@ class FileWalker:
 					for subdir in files:
 						subdir=root+os.sep+subdir
 						ret=self._traverseFiles(subdir,subdir,dataCB,context)
-						if ret!=None:
+						if ret is not None:
 							break
-					if ret!=None:
+					if ret is not None:
 						break
 					for subdir in dirs:
 						subdir=root+os.sep+subdir
 						ret=self._traverseFiles(subdir,subdir,dataCB,context)
-						if ret!=None:
+						if ret is not None:
 							break
-					if ret!=None:
+					if ret is not None:
 						break
-					if ret!=None:
+					if ret is not None:
 						break
 			else:
 				# it is a regular file, so open it and try again
@@ -111,10 +136,9 @@ class FileWalker:
 				try: # unfortunately, the only way to tell if its a tar from a filehandle is to try and read it
 					tf=tarfile.open(fileobj=location,mode="r:")
 					isTar=True
-				except Exception,e:#tarfile.READ_ERROR:
+				except Exception,_:#tarfile.READ_ERROR:
 					#print 'Archive error',e
 					isTar=False
-					pass
 				if isTar:
 					self._debug('[file] Tar '+path)
 					for name in tf.getmembers():
@@ -122,7 +146,7 @@ class FileWalker:
 							f=tf.extract(name)
 							ret=self._traverseFiles(path+os.sep+name,f,dataCB,context)
 							f.close()
-							if ret!=None:
+							if ret is not None:
 								break
 				elif location.read(2)=='7z':
 					raise ImplementationError()
@@ -139,7 +163,7 @@ class FileWalker:
 							f=zf.open(name)
 							ret=self._traverseFiles(path+os.sep+name,f,dataCB,context)
 							f.close()
-							if ret!=None:
+							if ret is not None:
 								break
 				else:
 					# it must be a regular file object
@@ -151,14 +175,17 @@ class FileWalker:
 							pass # zip files do not allow seeking
 						ret=dataCB(path,location,context)
 		return ret
-		
-		
+
+
 if __name__ == '__main__':
 	import sys
-	
+
 	def myCB(filename,fileHandle,context):
+		"""
+		file walker that simply prints the name
+		"""
 		print filename
-	
+
 	if len(sys.argv)<2:
 		print 'USEAGE: fileWalker.py filename(s)'
 	else:

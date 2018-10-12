@@ -1,3 +1,8 @@
+#!/usr/bin/env
+# -*- coding: utf-8 -*-
+"""
+Register windows explorer extensions
+"""
 try:
 	import winreg
 except ImportError:
@@ -33,20 +38,28 @@ EXPLORER_BACKGROUND_MENU_ID=FOLDER_CONTEXT_MENU_ID#'explorerBkgTemplate_menu'
 EXPLORER_BACKGROUND_MENU_ANCHOR_ID='explorerBkgTemplate_anchor'
 
 ICON_PATH=HERE+os.sep+'list-add-4.ico'
-UNKNOWN_ICON_PATH=HERE+os.sep+'lightbulb.ico' # if you don't want a default icon for unknown types, set to None
+
+# if you don't want a default icon for unknown types, set to None
+UNKNOWN_ICON_PATH=HERE+os.sep+'lightbulb.ico'
+
 
 def _nextShellNewName(extensionkey):
+	"""
+	create a shellnew name
+	(currently does nothing)
+	"""
 	return 'ShellNew.1'
-	
+
+
 def registerToFile(templateName):
 	"""
 	templateName must have extension
-	
+
 	TODO: windows only allows one "new" per extension.  Perhaps make some kind of
 	selector ui??
-	
+
 	NOTE: I had to do a full restart to make this work.  Is there a better way??
-	
+
 	See also:
 		http://mc-computing.com/WinExplorer/WinExplorerRegistry_ShellNew.htm
 	NOTE:
@@ -73,7 +86,7 @@ def registerToFile(templateName):
 		#	2) create a ShellNew.N+1 for the new stuff below
 		newkey=CreateKey(extensionkey,_nextShellNewName(extensionkey))
 		#	3) point original ShellNew to multimenu.py
-	except WindowsError,e:
+	except WindowsError,e2:
 		if str(e2).find('[Error 2]')>=0: # did not find the key, so create it
 			try:
 				newkey=CreateKey(key,'ShellNew')
@@ -84,13 +97,14 @@ def registerToFile(templateName):
 				else:
 					raise e2
 		else:
-			raise(e)
+			raise e
 	#cmd='cmd /k python.exe'
 	cmd='python.exe "'+pyErrRun.getLocation()+'"'
 	cmd=cmd+' "'+HERE+'newfiles.py" "'+templateName+'" "%v"'
 	SetValue(key,'Command',REG_SZ,cmd)
 	SetValue(key,'NullFile',REG_SZ,cmd) # not sure how necessary this is
 	FlushKey(key)
+
 
 def getAllNames():
 	"""
@@ -102,7 +116,11 @@ def getAllNames():
 	names.sort()
 	return names
 
+
 def getSystemIcon(forFile):
+	"""
+	get the sysem icon for a file type
+	"""
 	ext='.'+forFile.rsplit('.',1)[-1]
 	icon=None
 	try:
@@ -121,8 +139,11 @@ def getSystemIcon(forFile):
 	except WindowsError,e:
 		print e
 	return icon
-	
+
 def getFirstTemplateFile(templateName):
+	"""
+	get the template file
+	"""
 	filename=None
 	for c in ALL_TEMPLATES_CLASSES:
 		template=c.getTemplate(templateName)
@@ -131,8 +152,11 @@ def getFirstTemplateFile(templateName):
 	if template!=None:
 		filename=template.getFirstFile()
 	return filename
-	
+
 def getTemplateIcon(templateName):
+	"""
+	get the system icon for the template
+	"""
 	filename=getFirstTemplateFile(templateName)
 	if filename!=None:
 		return getSystemIcon(filename)
@@ -148,21 +172,22 @@ def unregisterFolderContextMenu(deep=True):
 		winreg.DeleteKey(key,'Shell/'+FOLDER_CONTEXT_MENU_ANCHOR_ID)
 	try:
 		winreg.DeleteKey(key,FOLDER_CONTEXT_MENU_ID)
-	except:
+	except Exception:
 		pass
-	
+
 def registerFolderContextMenu():
 	"""
 	register all shell new items we can provide with the individual folder right-click
-	
-	(Since we don't have an associated file type, we can't use New> so 
+
+	(Since we don't have an associated file type, we can't use New> so
 	add everything to our own context menu instead)
 	"""
 	unregisterFolderContextMenu(False)
 	key=winreg.OpenKey(winreg.HKEY_CLASSES_ROOT,FOLDER_CONTEXT_MENU_FILETYPE)
 	# create the anchor
 	subkey=winreg.CreateKey(key,'Shell\\'+FOLDER_CONTEXT_MENU_ANCHOR_ID)
-	winreg.SetValueEx(subkey,'ExtendedSubCommandsKey',0,winreg.REG_SZ,FOLDER_CONTEXT_MENU_FILETYPE+'\\'+FOLDER_CONTEXT_MENU_ID)
+	winreg.SetValueEx(subkey,'ExtendedSubCommandsKey',0,winreg.REG_SZ,
+		FOLDER_CONTEXT_MENU_FILETYPE+'\\'+FOLDER_CONTEXT_MENU_ID)
 	winreg.SetValueEx(subkey,'MUIVerb',0,winreg.REG_SZ,FOLDER_CONTEXT_MENU_TITLE)
 	winreg.SetValueEx(subkey,'Icon',0,winreg.REG_SZ,ICON_PATH)
 	# create the context-submenu
@@ -180,7 +205,7 @@ def registerFolderContextMenu():
 		submenuKey=winreg.CreateKey(subkey,keyname)
 		winreg.SetValueEx(submenuKey,'MUIVerb',0,winreg.REG_SZ,name)
 		icon=getTemplateIcon(name)
-		if icon==None and UNKNOWN_ICON_PATH!=None:
+		if icon is None and UNKNOWN_ICON_PATH!=None:
 			icon=UNKNOWN_ICON_PATH
 		if icon!=None:
 			winreg.SetValueEx(submenuKey,'Icon',0,winreg.REG_SZ,icon)
@@ -188,7 +213,7 @@ def registerFolderContextMenu():
 		submenuKey=winreg.CreateKey(submenuKey,'command')
 		winreg.SetValueEx(submenuKey,None,0,winreg.REG_SZ,cmd)
 		n+=1
-	
+
 def unregisterExplorerBackgroundMenu(deep=True):
 	"""
 	a deep unregister removes everything, whereas the opposite
@@ -199,21 +224,22 @@ def unregisterExplorerBackgroundMenu(deep=True):
 		winreg.DeleteKey(key,'background\\Shell\\'+EXPLORER_BACKGROUND_MENU_ANCHOR_ID)
 	try:
 		winreg.DeleteKey(key,EXPLORER_BACKGROUND_MENU_ID)
-	except:
+	except Exception:
 		pass
-	
+
 def registerExplorerBackgroundMenu():
 	"""
 	register all shell new items we can provide with the explorer window background right-click
-	
-	(Since we don't have an associated file type, we can't use New> so 
+
+	(Since we don't have an associated file type, we can't use New> so
 	add everything to our own context menu instead)
 	"""
 	unregisterExplorerBackgroundMenu(False)
 	key=winreg.OpenKey(winreg.HKEY_CLASSES_ROOT,EXPLORER_BACKGROUND_MENU_FILETYPE)
 	# create a background context menu anchor
 	subkey=winreg.CreateKey(key,'Background\\shell\\'+EXPLORER_BACKGROUND_MENU_ANCHOR_ID)
-	winreg.SetValueEx(subkey,'ExtendedSubCommandsKey',0,winreg.REG_SZ,EXPLORER_BACKGROUND_MENU_FILETYPE+'\\'+EXPLORER_BACKGROUND_MENU_ID)
+	winreg.SetValueEx(subkey,'ExtendedSubCommandsKey',0,
+		winreg.REG_SZ,EXPLORER_BACKGROUND_MENU_FILETYPE+'\\'+EXPLORER_BACKGROUND_MENU_ID)
 	winreg.SetValueEx(subkey,'MUIVerb',0,winreg.REG_SZ,EXPLORER_BACKGROUND_MENU_TITLE)
 	winreg.SetValueEx(subkey,'Icon',0,winreg.REG_SZ,ICON_PATH)
 	# create the context-submenu
@@ -232,7 +258,7 @@ def registerExplorerBackgroundMenu():
 		submenuKey=winreg.CreateKey(subkey,keyname)
 		winreg.SetValueEx(submenuKey,'MUIVerb',0,winreg.REG_SZ,name)
 		icon=getTemplateIcon(name)
-		if icon==None and UNKNOWN_ICON_PATH!=None:
+		if icon is None and UNKNOWN_ICON_PATH!=None:
 			icon=UNKNOWN_ICON_PATH
 		if icon!=None:
 			winreg.SetValueEx(submenuKey,'Icon',0,winreg.REG_SZ,icon)
@@ -240,10 +266,9 @@ def registerExplorerBackgroundMenu():
 		submenuKey=winreg.CreateKey(submenuKey,'command')
 		winreg.SetValueEx(submenuKey,None,0,winreg.REG_SZ,cmd)
 		n+=1
-	
-			
+
+
 if __name__ == '__main__':
-	import os
 	import sys
 	import win32com.shell.shell as shell
 	if False:
