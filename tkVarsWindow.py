@@ -3,12 +3,13 @@
 """
 Pop up a window to modify the variables according to their preference
 """
-from Tkinter import *
-import ScrolledText
+import tkinter.filedialog as filedialog
+from tkinter import *
+import tkinter.scrolledtext
 import os
 
 
-class FileBrowser(object):
+class FileBrowser:
 	"""
 	Pop up a window to modify the variables according to their preference
 	"""
@@ -23,12 +24,12 @@ class FileBrowser(object):
 
 		TODO: assign file types based on constraints in Variable object
 		"""
-		filetypes=(("All files", "*.*")) # (("HTML files", "*.html;*.htm"),("All files", "*.*"))
+		filetypes=((("All files", "*.*"))) # (("HTML files", "*.html;*.htm"),("All files", "*.*"))
 		filename=filedialog.askopenfilename(filetypes=filetypes)
 		self.varsWindow.tkVars[self.variableName]=filename
 
 
-class ToolTip(object):
+class ToolTip:
 	"""
 	Show a pop-up tooltip help when mouse is over the component
 	"""
@@ -66,7 +67,7 @@ class ToolTip(object):
 		"""
 		Stop the timer (because mouse moved)
 		"""
-		if self.timerId!=None:
+		if self.timerId is not None:
 			self.control.after_cancel(self.timerId)
 			self.timerId=None
 
@@ -74,7 +75,7 @@ class ToolTip(object):
 		"""
 		Finally hovered long enough, so show the tooltip
 		"""
-		if self.tipWindow!=None:
+		if self.tipWindow is not None:
 			return
 		# The tip window must be completely outside the control;
 		# otherwise when the mouse enters the tip window we get
@@ -93,7 +94,7 @@ class ToolTip(object):
 		"""
 		Moved away, so hide the tooltip
 		"""
-		if self.tipWindow!=None:
+		if self.tipWindow is not None:
 			self.tipWindow.destroy()
 			self.tipWindow=None
 
@@ -158,7 +159,7 @@ class TkVariablesWindow(Frame):
 		row=0
 		control=None
 		self.grid_columnconfigure(1,weight=1)
-		for v in self.variables.values():
+		for v in list(self.variables.values()):
 			if v.uitype=='checkbox':
 				tkVar=IntVar()
 				self.tkVars[v.name]=tkVar
@@ -168,7 +169,7 @@ class TkVariablesWindow(Frame):
 				else:
 					tkVar.set(0)
 				control.grid(row=row,column=0,columnspan=3,sticky="W")
-				if v.description!=None and v.description!='':
+				if v.description is not None and v.description:
 					self.tooltips.append(ToolTip(control,v.description))
 			elif v.uitype=='color':
 				# TODO: needs validation
@@ -179,7 +180,7 @@ class TkVariablesWindow(Frame):
 				control=Entry(self,textvariable=tkVar)
 				tkVar.set(v.value)
 				control.grid(row=row,column=1)
-				if v.description!=None and v.description!='':
+				if v.description is not None and v.description:
 					self.tooltips.append(ToolTip(control,v.description))
 					self.tooltips.append(ToolTip(label,v.description))
 			elif v.uitype=='date':
@@ -191,7 +192,7 @@ class TkVariablesWindow(Frame):
 				control=Entry(self,textvariable=tkVar)
 				tkVar.set(v.value)
 				control.grid(row=row,column=1)
-				if v.description!=None and v.description!='':
+				if v.description is not None and v.description:
 					self.tooltips.append(ToolTip(control,v.description))
 					self.tooltips.append(ToolTip(label,v.description))
 			elif v.uitype=='datetime':
@@ -203,7 +204,7 @@ class TkVariablesWindow(Frame):
 				control=Entry(self,textvariable=tkVar)
 				tkVar.set(v.value)
 				control.grid(row=row,column=1)
-				if v.description!=None and v.description!='':
+				if v.description is not None and v.description:
 					self.tooltips.append(ToolTip(control,v.description))
 					self.tooltips.append(ToolTip(label,v.description))
 			elif v.uitype=='datetime-local':
@@ -215,7 +216,7 @@ class TkVariablesWindow(Frame):
 				control=Entry(self,textvariable=tkVar)
 				tkVar.set(v.value)
 				control.grid(row=row,column=1)
-				if v.description!=None and v.description!='':
+				if v.description is not None and v.description:
 					self.tooltips.append(ToolTip(control,v.description))
 					self.tooltips.append(ToolTip(label,v.description))
 			elif v.uitype=='email':
@@ -227,7 +228,7 @@ class TkVariablesWindow(Frame):
 				control=Entry(self,textvariable=tkVar)
 				tkVar.set(v.value)
 				control.grid(row=row,column=1,columnspan=2)
-				if v.description!=None and v.description!='':
+				if v.description is not None and v.description:
 					self.tooltips.append(ToolTip(control,v.description))
 					self.tooltips.append(ToolTip(label,v.description))
 			elif v.uitype=='file':
@@ -241,7 +242,7 @@ class TkVariablesWindow(Frame):
 				fb=FileBrowser(self,v.name)
 				bn=Button(self,text='...',command=fb.onDialog)
 				bn.grid(row=row,column=2)
-				if v.description!=None and v.description!='':
+				if v.description is not None and v.description:
 					self.tooltips.append(ToolTip(control,v.description))
 					self.tooltips.append(ToolTip(label,v.description))
 					self.tooltips.append(ToolTip(bn,v.description))
@@ -258,7 +259,7 @@ class TkVariablesWindow(Frame):
 				fb=FileBrowser(self,v.name)
 				bn=Button(self,text='...',command=fb.onDialog)
 				bn.grid(row=row,column=2)
-				if v.description!=None and v.description!='':
+				if v.description is not None and v.description:
 					self.tooltips.append(ToolTip(control,v.description))
 					self.tooltips.append(ToolTip(label,v.description))
 					self.tooltips.append(ToolTip(bn,v.description))
@@ -271,7 +272,7 @@ class TkVariablesWindow(Frame):
 				control=Entry(self,textvariable=tkVar)
 				tkVar.set(v.value)
 				control.grid(row=row,column=1)
-				if v.description!=None and v.description!='':
+				if v.description is not None and v.description:
 					self.tooltips.append(ToolTip(control,v.description))
 					self.tooltips.append(ToolTip(label,v.description))
 			elif v.uitype=='number':
@@ -283,7 +284,7 @@ class TkVariablesWindow(Frame):
 				control=Entry(self,textvariable=tkVar)
 				tkVar.set(v.value)
 				control.grid(row=row,column=1,columnspan=2)
-				if v.description!=None and v.description!='':
+				if v.description is not None and v.description:
 					self.tooltips.append(ToolTip(control,v.description))
 					self.tooltips.append(ToolTip(label,v.description))
 			elif v.uitype=='password':
@@ -294,7 +295,7 @@ class TkVariablesWindow(Frame):
 				control=Entry(self,show='*',textvariable=tkVar)
 				tkVar.set(v.value)
 				control.grid(row=row,column=1,columnspan=2)
-				if v.description!=None and v.description!='':
+				if v.description is not None and v.description:
 					self.tooltips.append(ToolTip(control,v.description))
 					self.tooltips.append(ToolTip(label,v.description))
 			elif v.uitype=='radio':
@@ -305,7 +306,7 @@ class TkVariablesWindow(Frame):
 				value=v.value
 				tkVar.set(value)
 				control.grid(row=row,column=0,columnspan=3)
-				if v.description!=None and v.description!='':
+				if v.description is not None and v.description:
 					self.tooltips.append(ToolTip(control,v.description))
 			elif v.uitype=='range':
 				# TODO: needs validation
@@ -316,7 +317,7 @@ class TkVariablesWindow(Frame):
 				control=Entry(self,textvariable=tkVar)
 				tkVar.set(v.value)
 				control.grid(row=row,column=1,columnspan=2)
-				if v.description!=None and v.description!='':
+				if v.description is not None and v.description:
 					self.tooltips.append(ToolTip(control,v.description))
 					self.tooltips.append(ToolTip(label,v.description))
 			elif v.uitype=='search':
@@ -327,7 +328,7 @@ class TkVariablesWindow(Frame):
 				control=Entry(self,textvariable=tkVar)
 				tkVar.set(v.value)
 				control.grid(row=row,column=1,columnspan=2)
-				if v.description!=None and v.description!='':
+				if v.description is not None and v.description:
 					self.tooltips.append(ToolTip(control,v.description))
 					self.tooltips.append(ToolTip(label,v.description))
 			elif v.uitype=='tel':
@@ -338,7 +339,7 @@ class TkVariablesWindow(Frame):
 				control=Entry(self,textvariable=tkVar)
 				tkVar.set(v.value)
 				control.grid(row=row,column=1,columnspan=2)
-				if v.description!=None and v.description!='':
+				if v.description is not None and v.description:
 					self.tooltips.append(ToolTip(control,v.description))
 					self.tooltips.append(ToolTip(label,v.description))
 			elif v.uitype=='text':
@@ -349,21 +350,20 @@ class TkVariablesWindow(Frame):
 				control=Entry(self,textvariable=tkVar)
 				tkVar.set(v.value)
 				control.grid(row=row,column=1,columnspan=2,sticky="WE")
-				if v.description!=None and v.description!='':
+				if v.description is not None and v.description:
 					self.tooltips.append(ToolTip(control,v.description))
 					self.tooltips.append(ToolTip(label,v.description))
 			elif v.uitype=='textarea':
 				label=Label(self,text=v.name.replace('_',' '))
 				label.grid(row=row,column=0)
-				control=ScrolledText.ScrolledText(self,height=3)
+				control=tkinter.scrolledtext.ScrolledText(self,height=3)
 				tkVar=control # In total breaking with TK's pattern, we
 					# have to get the data directly from the control!
 				self.tkVars[v.name]=tkVar
-				control.pack()
 				control.delete('1.0',END)
 				control.insert('insert',v.value)
 				control.grid(row=row,column=1,columnspan=2,sticky="WE")
-				if v.description!=None and v.description!='':
+				if v.description is not None and v.description:
 					self.tooltips.append(ToolTip(control,v.description))
 					self.tooltips.append(ToolTip(label,v.description))
 			elif v.uitype=='time':
@@ -376,12 +376,12 @@ class TkVariablesWindow(Frame):
 				control=Entry(self,textvariable=tkVar)
 				tkVar.set(v.value)
 				control.grid(row=row,column=1,columnspan=2)
-				if v.description!=None and v.description!='':
+				if v.description is not None and v.description:
 					self.tooltips.append(ToolTip(control,v.description))
 					self.tooltips.append(ToolTip(label,v.description))
 			else:
-				print 'ERR: Unknown or inconclusive variable type -',v.uitype
-			if control!=None:
+				print('ERR: Unknown or inconclusive variable type -',v.uitype)
+			if control is not None:
 				if row==0:
 					control.focus_set()
 				row=row+1
@@ -404,7 +404,7 @@ class TkVariablesWindow(Frame):
 		run this window
 		"""
 		self.mainloop()
-		for k in self.variables.keys():
+		for k in list(self.variables.keys()):
 			if k in self.tkVars: # need to check since hidden ones aren't in there!
 				tkVar=self.tkVars[k]
 				if tkVar.__class__ ==StringVar:
@@ -435,4 +435,4 @@ if __name__ == '__main__':
 	}
 	app=TkVariablesWindow("Edit Stuff",vals)
 	vals2=app.run()
-	print vals2
+	print(vals2)

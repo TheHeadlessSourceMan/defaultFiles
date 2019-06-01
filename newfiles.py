@@ -13,7 +13,7 @@ from plainTemplates import PlainTemplates
 from pythonTemplates import PythonTemplates
 
 
-class NewFiles(object):
+class NewFiles:
 	"""
 	Creates new files based on templates.
 
@@ -34,7 +34,7 @@ class NewFiles(object):
 		self.template=None
 		for c in self.ALL_TEMPLATES_CLASSES:
 			self.template=c.getTemplate(templateName)
-			if self.template!=None:
+			if self.template is not None:
 				break
 		if self.template is None:
 			raise Exception('ERR: Template "'+templateName+'" not found')
@@ -109,7 +109,7 @@ class NewFiles(object):
 		variables=self.template.getVariables()
 		if variables:
 			if kwArgs:
-				for k,v in kwArgs.items():
+				for k,v in list(kwArgs.items()):
 					variables[k].value=v
 				worked=True # like the dialog was accepted (if we showed one)
 			else:
@@ -136,21 +136,21 @@ if __name__ == '__main__':
 	except ImportError:
 		pass
 	if len(sys.argv)<3:
-		print 'USEAGE:'
-		print '   newfiles templateName location [arg=val,...]'
-		print 'where if no values are specified, it will bring up the ui'
+		print('USEAGE:')
+		print('   newfiles templateName location [arg=val,...]')
+		print('where if no values are specified, it will bring up the ui')
 	else:
 		template=sys.argv[1]
 		location=sys.argv[2]
 		# stupid hoops to make it work with Windoze context menus
-		if os.sep=='\\' and os.environ.has_key('ComSpec'):
+		if os.sep=='\\' and 'ComSpec' in os.environ:
 			compath=os.environ['ComSpec'].rsplit('\\',1)[0]
 			if os.getcwd()==compath: # we are being called from the comspec path
 				# that means windoze probably sent us a directory AND whatever is selected within
 				# so we need to go up a level
 				location=location.rsplit('\\',1)[0]
-		print 'Template:',template
-		print 'Location:',location
+		print('Template:',template)
+		print('Location:',location)
 		if len(sys.argv)>3:
 			kwArgs={}
 			for a in sys.argv[3:]:

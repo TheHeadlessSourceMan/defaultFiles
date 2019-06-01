@@ -3,7 +3,7 @@ Tracks each variable and its changes throughout the system
 """
 
 
-class Variable(object):
+class Variable:
 	"""
 	Tracks each variable and its changes throughout the system
 	"""
@@ -17,54 +17,54 @@ class Variable(object):
 		self.preReplace=""
 		self.__needsEval__=True
 
-	def evalPreReplace(self,locals=None):
+	def evalPreReplace(self,localValues=None):
 		"""
 		evaluate the variable/code prior to replacing the values
 		"""
-		if self.preReplace!='':
-			if locals is None:
-				locals=[]
+		if self.preReplace:
+			if localValues is None:
+				localValues=[]
 			v=self.preReplace
 			#print '==='
 			#print v
 			#print '==='
 			code='preReplace='+v
 			try:
-				exec(code,globals(),locals)
-				self.value=locals['preReplace']
-			except Exception,e:
-				print code
+				exec(code,globals(),localValues)
+				self.value=localValues['preReplace']
+			except Exception as e:
+				print(code)
 				raise e
 
-	def eval(self,locals=None):
+	def eval(self,localValues=None):
 		"""
 		evaluate the variable values code
 		(except for preReplace)
 		"""
 		if self.__needsEval__:
 			self.__needsEval__=False
-			if locals is None:
-				locals=[]
+			if localValues is None:
+				localValues=[]
 			for k in ['name','description','uitype','value']:
 				v=getattr(self,k)
-				if v!='':
+				if v:
 					code=k+'='+v
 					#print '==='+k+'===\n'+code+'\n\n'
-					if locals.has_key(k):
-						old=locals[k]
+					if k in localValues:
+						old=localValues[k]
 					else:
 						old=None
 					try:
-						exec(code,globals(),locals)
-					except Exception,e:
-						print code
+						exec(code,globals(),localValues)
+					except Exception as e:
+						print(code)
 						raise e
-					#print '==='+k+'===\n'+str(locals[k])+'\n\n'
-					setattr(self,k,locals[k])
-					if old!=None:
-						locals[k]=old
+					#print '==='+k+'===\n'+str(localValues[k])+'\n\n'
+					setattr(self,k,localValues[k])
+					if old is not None:
+						localValues[k]=old
 					else:
-						del locals[k]
+						del localValues[k]
 
 	def __int__(self):
 		return int(self.value)

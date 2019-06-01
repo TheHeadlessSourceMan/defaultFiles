@@ -7,7 +7,7 @@ import re
 from variable import *
 
 
-class SquareTemplates(object):
+class SquareTemplates:
 	"""
 	All of the installed square templates
 	"""
@@ -33,7 +33,7 @@ class SquareTemplates(object):
 		return []
 
 
-class SquareTemplate(object):
+class SquareTemplate:
 	"""
 	A square template uses simple files marked up with [name,default,descr]
 	"""
@@ -82,15 +82,15 @@ class SquareTemplate(object):
 			desc=match.group('desc')
 			if desc is None:
 				desc=''
-			if self.variables.has_key(name):
+			if name in self.variables:
 				# fill in any desc/default if missing
 				dd=self.variables[name]
-				if dd[0]=='' and default!='':
-					if dd[1]=='' and desc!='':
+				if (not dd[0]) and default:
+					if (not dd[1]) and desc:
 						self.variables[name]=(default,desc)
 					else:
 						self.variables[name]=(default,dd[1])
-				elif dd[1]=='' and desc!='':
+				elif (not dd[1]) and desc:
 					self.variables[name]=(dd[0],desc)
 			else:
 				self.variables[name]=(default,desc)
@@ -104,15 +104,15 @@ class SquareTemplate(object):
 			desc=match.group('desc')
 			if desc is None:
 				desc=''
-			if self.variables.has_key(name):
+			if name in self.variables:
 				# fill in any desc/default if missing
 				dd=self.variables[name]
-				if dd[0]=='' and default!='':
-					if dd[1]=='' and desc!='':
+				if (not dd[0]) and default:
+					if not(dd[1]) and desc:
 						self.variables[name]=(default,desc)
 					else:
 						self.variables[name]=(default,dd[1])
-				elif dd[1]=='' and desc!='':
+				elif (not dd[1]) and desc:
 					self.variables[name]=(dd[0],desc)
 			else:
 				self.variables[name]=(default,desc)
@@ -122,7 +122,7 @@ class SquareTemplate(object):
 		replace variables in a filename
 		"""
 		data=f.read()
-		for name,value in self.variables.items():
+		for name,value in list(self.variables.items()):
 			regex=r"""(\[\[\s*"""+re.escape(name)+r"""((?:\s|\,).*?)?\]\])"""
 			data=re.sub(regex,value[0].replace('\\','\\\\'),data)
 		f.seek(0)
@@ -148,7 +148,7 @@ class SquareTemplate(object):
 		# do a sweep for square variables
 		self._traverseFiles(templateFilename,self._findSquareVarsCB,None)
 		# run the ui
-		print 'variables=',self.variables
+		print('variables=',self.variables)
 		if original:
 			app=VarsWindow('Values',self.variables)
 			app.run()

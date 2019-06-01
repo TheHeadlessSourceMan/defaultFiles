@@ -14,7 +14,7 @@ SKIP_EXTENSIONS=['exe','dll','pdb','msi','sys','gif','jpg','jpeg','png','bmp',
 	'pyo','pyd','iso','a','o','flv','m4a','so','ttf','fon','pch','wmv']
 
 
-class FileWalker(object):
+class FileWalker:
 	"""
 	walks a set of files and gives you a chance to edit them at will
 
@@ -30,7 +30,7 @@ class FileWalker(object):
 		"""
 		location can be a filename, list, or open file handle
 		"""
-		if skipExtensions==None:
+		if skipExtensions is None:
 			skipExtensions=SKIP_EXTENSIONS
 		self.location=location
 		self.skipExtensions=skipExtensions
@@ -59,7 +59,7 @@ class FileWalker(object):
 		:param message: the message to log
 		"""
 		if self.debug:
-			print 'FILEWALKER:',message
+			print('FILEWALKER:',message)
 
 	def _shouldWalk(self,filename):
 		"""
@@ -83,14 +83,14 @@ class FileWalker(object):
 			path=c:\foo.zip\bar\baz.html, location=\bar\baz.html
 		"""
 		ret=None
-		if hasattr(location,'__iter__') and not isinstance(location,basestring):
+		if hasattr(location,'__iter__') and not isinstance(location,str):
 			self._debug('[list]')
 			# Go though a list of files
 			for s in location:
 				ret=self._traverseFiles(path,s,dataCB,context)
 				if ret is not None:
 					break
-		elif isinstance(location,basestring):
+		elif isinstance(location,str):
 			# it is a file name
 			if not self._shouldWalk(location):
 				pass
@@ -136,7 +136,7 @@ class FileWalker(object):
 				try: # unfortunately, the only way to tell if its a tar from a filehandle is to try and read it
 					tf=tarfile.open(fileobj=location,mode="r:")
 					isTar=True
-				except Exception,_:#tarfile.READ_ERROR:
+				except Exception as _:#tarfile.READ_ERROR:
 					#print 'Archive error',e
 					isTar=False
 				if isTar:
@@ -184,10 +184,11 @@ if __name__ == '__main__':
 		"""
 		file walker that simply prints the name
 		"""
-		print filename
+		print(filename)
 
 	if len(sys.argv)<2:
-		print 'USEAGE: fileWalker.py filename(s)'
+		print('USEAGE: fileWalker.py filename(s)')
 	else:
 		fw=FileWalker(sys.argv[1:],None)
 		fw.traverse(myCB,None)
+

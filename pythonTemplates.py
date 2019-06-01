@@ -6,8 +6,7 @@ the template
 """
 import os
 import collections
-from EzFs import ezFs
-from EzFs import baseFs
+from ezFs import *
 from variable import *
 
 
@@ -22,7 +21,7 @@ def _filenameFixer(filename):
 	return filename
 
 
-class PythonTemplates(object):
+class PythonTemplates:
 	"""
 	A template system wherein python code can be embedded directly into
 	the template
@@ -56,7 +55,7 @@ class PythonTemplates(object):
 				ret.append(f)
 		return ret
 
-class Replace(object):
+class Replace:
 	"""
 	Represents a replacement tag in the .ini
 	"""
@@ -67,7 +66,7 @@ class Replace(object):
 		self.files="'*'"
 		self.__needsEval__=True
 
-	def eval(self,locals=None):
+	def eval(self,localValues=None):
 		"""
 		evaluate the replacement as python code
 		"""
@@ -75,12 +74,12 @@ class Replace(object):
 			self.__needsEval__=False
 			for k in ['find','replace','files']:
 				v=getattr(self,k)
-				if v!='':
+				if v:
 					try:
-						v=str(eval(v,locals))
-					except Exception,e:
-						print 'OOPS!  There seems to be something wrong with replacement variable "'+k+'"'
-						print '   (Usually this is because you forgot to put it in quotes.)'
+						v=str(eval(v,localValues))
+					except Exception as e:
+						print('OOPS!  There seems to be something wrong with replacement variable "'+k+'"')
+						print('   (Usually this is because you forgot to put it in quotes.)')
 						raise e
 					setattr(self,k,v)
 
@@ -95,7 +94,7 @@ class Replace(object):
 		return '\n'.join(result)
 
 
-class Template(object):
+class Template:
 	"""
 	A single python template
 	"""
@@ -110,12 +109,12 @@ class Template(object):
 		"""
 		Get the first available filename
 		"""
-		ez=ezFs.EzFs(self.getDir())
+		ez=EzFs(self.getDir())
 		filename=None
 		for r in self.replaces:
 			files=ez.glob(r.files)
 			if files:
-				filename=files[0].abspath()
+				filename=files[0]
 				break
 		return filename
 
@@ -126,12 +125,19 @@ class Template(object):
 		variables=collections.OrderedDict()
 		for v in self.variables:
 			variables['self']=self # reset every time in case something doesn't play nice
-			v.eval(locals=variables)
+			v.eval(localValues=variables)
 			variables[v.name]=v # add as we go, so later variables can build upon earlier
-		for k,v in variables.items():
+		for k,v in list(variables.items()):
 			if not isinstance(v,Variable):
+				print('"'+k+'" is not a variable.  Deleting.')
 				del variables[k]
 		return variables
+
+	def __repr__(self):
+		ret=[self.name]
+		for k,v in list(self.getVariables().items()):
+			ret.append('  '+k+'='+('\n    '.join(str(v.value).split('\n'))))
+		return '\n'.join(ret)
 
 	def shouldIgnore(self,filename):
 		"""
@@ -152,13 +158,14 @@ class Template(object):
 		load the template ini file
 		"""
 		self.name=name
-		f=open(PythonTemplates.DIRECTORY+os.sep+name+os.sep+'template.ini','r')
+		filename=PythonTemplates.DIRECTORY+os.sep+name+os.sep+'template.ini'
+		f=open(filename,'r')
 		current=None
 		currentLine=[]
 		for line in f:
 			line=line.rstrip()
 			line_s=line.lstrip()
-			if len(line_s)<1 or line_s[0]=='#':
+			if (not line_s) or line_s[0]=='#':
 				continue
 			if line_s.startswith('[variable]'):
 				current=Variable()
@@ -186,8 +193,9 @@ class Template(object):
 					currentLine='\n'.join(currentLine)
 					# now determine what value we are setting
 					currentLine=[x.strip() for x in currentLine.split('=',1)]
-					if len(currentLine)!=2 or currentLine[1] or not hasattr(current,currentLine[0]):
-						pass
+					if len(currentLine)!=2 or not currentLine[1] or not hasattr(current,currentLine[0]):
+						print('WARN: error parsing:',currentLine)
+						#raise Exception()
 					else:
 						setattr(current,currentLine[0],currentLine[1])
 					currentLine=[]
@@ -207,18 +215,16 @@ class Template(object):
 		except Exception:
 			pass
 		f=ezFile.open('rb')
-		data=f.read()
+		if f is None:
+			print('ERR: Unable to find file\n'+ezFile.abspath)
+		data=f.read(encoding=None) # this will return raw bytes
 		f.close()
 		if isRe:
 			data=find.sub(replace,data)
-		elif isinstance(find,basestring):
-			if isinstance(replace,basestring):
-				replace=replace.encode('utf-8')
-			data=data.replace(find,replace)
-			try:
-				find=find.encode('ascii')
-				replace=replace.encode('ascii')
-				data=data.replace(find,replace)
+		elif isinstance(find,str):
+			data=data.replace(find.encode('utf-8'),replace.encode('utf-8'))
+			try: # in case the file has wide character encoding
+				data=data.replace(find.encode('UCS-2'),replace.encode('UCS-2'))
 			except Exception:
 				pass
 		else:
@@ -233,7 +239,7 @@ class Template(object):
 			except Exception:
 				pass
 		f=ezFile.open('wb')
-		f.write(data.encode('utf-8','ignore'))
+		f.write(data)
 		f.close()
 
 	def _replaceFileName(self,ezFile,find,replace):
@@ -251,8 +257,8 @@ class Template(object):
 		newFilename=ezFile.name.rsplit(os.sep,1)
 		if isRe:
 			newFilename[-1]=find.sub(replace,newFilename[-1])
-		elif isinstance(find,unicode):
-			if isinstance(replace,str):
+		elif isinstance(find,str):
+			if isinstance(replace,bytes):
 				replace=replace.encode('utf-8')
 			if type(newFilename[-1])==type(find):
 				newFilename[-1]=newFilename[-1].replace(find,replace)
@@ -279,6 +285,7 @@ class Template(object):
 		newFilename[-1]=_filenameFixer(newFilename[-1])
 		newFilename=os.sep.join(newFilename)
 		if ezFile.name!=newFilename:
+			print('CHANGE FILENAME'+'"'+ezFile.name+'" to "'+newFilename+'"')
 			ezFile.rename(newFilename)
 
 	def _replaceFileWalker(self,ezFile):
@@ -286,11 +293,11 @@ class Template(object):
 		Walks through the files and does the replacement
 		"""
 		for r in self.replaces: # attempt every replacement on this file
-			if ezFile.path() not in r.files:
-				print 'IGNORED: find',r.find,'within',ezFile.path()
+			if ezFile.path not in r.files:
+				print('IGNORED: find',r.find,'within',ezFile.path)
 			else:
-				print 'VISITING: find',r.find,'upon',ezFile.path()
-				if not isinstance(ezFile,baseFs.BaseFsDirectory):
+				print('VISITING: find',r.find,'upon',ezFile.path)
+				if not isinstance(ezFile,BaseFsDirectory):
 					self._replaceFileContents(ezFile,r.find,r.replace)
 				# change the file name if necessary
 				self._replaceFileName(ezFile,r.find,r.replace)
@@ -300,15 +307,15 @@ class Template(object):
 		open a path
 		"""
 		openAfter=''
-		if variables.has_key('openAfter'):
+		if 'openAfter' in variables:
 			openAfter=variables['openAfter'].value
-		if openAfter!=None and openAfter!='':
+		if openAfter is not None and openAfter:
 			cmd=None
 			if openAfter.lower() in ['os','default']:
 				# TODO: this only works on windows!
 				program='start'
 				for n in ['openThis','filename','directory']:
-					if variables.has_key(n):
+					if n in variables:
 						cmd=program+' "'+str(variables[n].value)+'"'
 						break
 				import win32api
@@ -318,11 +325,11 @@ class Template(object):
 				code='openAfter="'+openAfter+'"'
 				try:
 					exec(code,globals(),variables)
-				except Exception,e:
-					print code
+				except Exception as e:
+					print(code)
 					raise e
 				cmd=str(variables['openAfter'])
-				if cmd!=None and cmd!='':
+				if cmd is not None and cmd:
 					import subprocess
 					subprocess.Popen(cmd,shell=True)
 
@@ -333,33 +340,33 @@ class Template(object):
 		if atPath[-1]!=os.sep:
 			atPath=atPath+os.sep
 		# pre-evaluate any variables with evalPreReplace attributes
-		for k,v in variables.items():
+		for k,v in list(variables.items()):
 			if k!='self' and isinstance(v,Variable):
 				variables['self']=self # reset every time in case something doesn't play nice
 				v.evalPreReplace(variables)
-		for k,v in variables.items():
+		for k,v in list(variables.items()):
 			if not isinstance(v,Variable):
 				del variables[k]
 		# make the variables into local values for using in scripts
 		localDict={}
-		for k,v in variables.items():
+		for k,v in list(variables.items()):
 			localDict[v.name]=v
-		ez=ezFs.EzFs(atPath)
+		ez=EzFs(atPath)
 		# get every Replace item ready for use
 		for r in self.replaces:
 			localDict['self']=self # reset every time in case something doesn't play nice
-			r.eval(locals=localDict)
-			for k,v in localDict.items():
-				if variables.has_key(k):
+			r.eval(localValues=localDict)
+			for k,v in list(localDict.items()):
+				if k in variables:
 					variables[k].value=v
-			if isinstance(r.files,basestring):
+			if isinstance(r.files,str):
 				# if it is a string (glob expression), convert it into a list of files now
 				if r.files is None or r.files=='*':
 					# this is a special case meaning "everything", including all directories and subdirectories
-					r.files=[f.path() for f in ez.getAll()]
-					r.files.append(ez.path())
+					r.files=[f.path for f in ez.getAll()]
+					r.files.append(ez.path)
 				elif r.files.find('*')>=0 or r.files.find('?')>=0:
-					r.files=[f.path() for f in ez.glob(r.files)]
+					r.files=[f.path for f in ez.glob(r.files)]
 				else:
 					r.files=[r.files]
 				#print 'FILES IN SET:',r.files
@@ -378,10 +385,10 @@ if __name__ == '__main__':
 	except ImportError:
 		pass
 	if len(sys.argv)<3:
-		print 'USEAGE:'
-		print '   newfiles templateName location'
+		print('USEAGE:')
+		print('   newfiles templateName location')
 	else:
-		print 'Template:',sys.argv[1]
-		print 'Location:',sys.argv[2]
+		print('Template:',sys.argv[1])
+		print('Location:',sys.argv[2])
 		n=Template(sys.argv[1])
 		n.create(sys.argv[2])

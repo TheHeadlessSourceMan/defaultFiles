@@ -1,1 +1,1 @@
-from newfiles import *
+from .newfiles import *

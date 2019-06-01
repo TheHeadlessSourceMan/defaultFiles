@@ -3,20 +3,17 @@
 """
 Register windows explorer extensions
 """
-try:
-	import winreg
-except ImportError:
-	import _winreg as winreg
 import os
-
-from k_runner import pyErrRun
-
+import winreg
+from k_runner import *
 from squareTemplates import SquareTemplates
 from plainTemplates import PlainTemplates
 from pythonTemplates import PythonTemplates
 ALL_TEMPLATES_CLASSES=[PythonTemplates,SquareTemplates,PlainTemplates]
 
+
 HERE=os.path.abspath(__file__).rsplit(os.sep,1)[0]
+
 
 # NOTE: the hierarchy of folders goes:
 # (obviously not stored in registry like this)
@@ -42,6 +39,8 @@ ICON_PATH=HERE+os.sep+'list-add-4.ico'
 # if you don't want a default icon for unknown types, set to None
 UNKNOWN_ICON_PATH=HERE+os.sep+'lightbulb.ico'
 
+# change this depending on how you want the scripts to be called
+PYTHON_COMMAND='cmd /k python "'+PyErrRun.getLocation()+'" '
 
 def _nextShellNewName(extensionkey):
 	"""
@@ -72,38 +71,36 @@ def registerToFile(templateName):
 	"""
 	extension='.'+templateName.rsplit('.',1)[1]
 	try:
-		extensionkey=OpenKey(HKEY_CLASSES_ROOT,extension)
-	except WindowsError,e:
-		print e
-		extensionkey=CreateKey(HKEY_CLASSES_ROOT,extension)
+		extensionkey=winreg.OpenKey(winreg.HKEY_CLASSES_ROOT,extension)
+	except WindowsError as e:
+		print(e)
+		extensionkey=winreg.CreateKey(winreg.HKEY_CLASSES_ROOT,extension)
 	# todo: follow the default value and get a new key
 	# create or open ShellNew
 	try:
-		key=OpenKey(extensionkey,'ShellNew')
+		key=winreg.OpenKey(extensionkey,'ShellNew')
 		# since it is present:
 		#	1) copy it to ShellNew.N
-		newkey=CreateKey(extensionkey,_nextShellNewName(extensionkey))
+		newkey=winreg.CreateKey(extensionkey,_nextShellNewName(extensionkey))
 		#	2) create a ShellNew.N+1 for the new stuff below
-		newkey=CreateKey(extensionkey,_nextShellNewName(extensionkey))
+		newkey=winreg.CreateKey(extensionkey,_nextShellNewName(extensionkey))
 		#	3) point original ShellNew to multimenu.py
-	except WindowsError,e2:
+	except WindowsError as e2:
 		if str(e2).find('[Error 2]')>=0: # did not find the key, so create it
 			try:
-				newkey=CreateKey(key,'ShellNew')
-			except WindowsError,e2:
+				newkey=winreg.CreateKey(key,'ShellNew')
+			except WindowsError as e2:
 				if str(e2).find('[Error 5]')>=0:
-					print e2
+					print(e2)
 					raise Exception('Did you forget to run as administrator?')
-				else:
-					raise e2
+				raise e2
 		else:
 			raise e
-	#cmd='cmd /k python.exe'
-	cmd='python.exe "'+pyErrRun.getLocation()+'"'
-	cmd=cmd+' "'+HERE+'newfiles.py" "'+templateName+'" "%v"'
-	SetValue(key,'Command',REG_SZ,cmd)
-	SetValue(key,'NullFile',REG_SZ,cmd) # not sure how necessary this is
-	FlushKey(key)
+	cmd=PYTHON_COMMAND
+	cmd=cmd+'"'+HERE+'newfiles.py" "'+templateName+'" "%v"'
+	winreg.SetValue(key,'Command',winreg.REG_SZ,cmd)
+	winreg.SetValue(key,'NullFile',winreg.REG_SZ,cmd) # not sure how necessary this is
+	winreg.FlushKey(key)
 
 
 def getAllNames():
@@ -121,6 +118,8 @@ def getSystemIcon(forFile):
 	"""
 	get the sysem icon for a file type
 	"""
+	if not isinstance(forFile,str):
+		forFile=forFile.path
 	ext='.'+forFile.rsplit('.',1)[-1]
 	icon=None
 	try:
@@ -129,15 +128,15 @@ def getSystemIcon(forFile):
 			icon=winreg.QueryValue(key,'DefaultIcon')
 		except WindowsError:
 			pass
-		next=winreg.QueryValue(key,None)
-		#print ext,'->',next
-		key=winreg.OpenKey(winreg.HKEY_CLASSES_ROOT,next,0,winreg.KEY_READ)
+		nextKey=winreg.QueryValue(key,None)
+		#print ext,'->',nextKey
+		key=winreg.OpenKey(winreg.HKEY_CLASSES_ROOT,nextKey,0,winreg.KEY_READ)
 		try:
 			icon=winreg.QueryValue(key,'DefaultIcon')
 		except WindowsError:
 			pass
-	except WindowsError,e:
-		print e
+	except WindowsError as e:
+		print(e)
 	return icon
 
 def getFirstTemplateFile(templateName):
@@ -147,9 +146,9 @@ def getFirstTemplateFile(templateName):
 	filename=None
 	for c in ALL_TEMPLATES_CLASSES:
 		template=c.getTemplate(templateName)
-		if template!=None:
+		if template is not None:
 			break
-	if template!=None:
+	if template is not None:
 		filename=template.getFirstFile()
 	return filename
 
@@ -158,7 +157,7 @@ def getTemplateIcon(templateName):
 	get the system icon for the template
 	"""
 	filename=getFirstTemplateFile(templateName)
-	if filename!=None:
+	if filename is not None:
 		return getSystemIcon(filename)
 	return None
 
@@ -197,17 +196,16 @@ def registerFolderContextMenu():
 	names=getAllNames()
 	n=0
 	for name in names:
-		print 'Registering',name
+		print('Registering',name)
 		keyname='%03dcmd'%n
-		#cmd='cmd /k python.exe'
-		cmd='python.exe "'+pyErrRun.getLocation()+'"'
-		cmd=cmd+' "'+HERE+os.sep+'newfiles.py" "'+name+'" "%v"'
+		cmd=PYTHON_COMMAND
+		cmd=cmd+'"'+HERE+os.sep+'newfiles.py" "'+name+'" "%v"'
 		submenuKey=winreg.CreateKey(subkey,keyname)
 		winreg.SetValueEx(submenuKey,'MUIVerb',0,winreg.REG_SZ,name)
 		icon=getTemplateIcon(name)
-		if icon is None and UNKNOWN_ICON_PATH!=None:
+		if icon is None and UNKNOWN_ICON_PATH is not None:
 			icon=UNKNOWN_ICON_PATH
-		if icon!=None:
+		if icon is not None:
 			winreg.SetValueEx(submenuKey,'Icon',0,winreg.REG_SZ,icon)
 		#winreg.SetValueEx(submenuKey,'NoWorkingDirectory',0,winreg.REG_SZ,'')
 		submenuKey=winreg.CreateKey(submenuKey,'command')
@@ -249,18 +247,17 @@ def registerExplorerBackgroundMenu():
 	names=getAllNames()
 	n=0
 	for name in names:
-		print 'Registering',name
+		print('Registering',name)
 		keyname='%03dcmd'%n
 		# NOTE: the explorer backgroun command uses "current working directory", whereas folders use %1
-		#cmd='cmd /k python.exe'
-		cmd='python.exe "'+pyErrRun.getLocation()+'"'
-		cmd=cmd+' "'+HERE+os.sep+'newfiles.py" "'+name+'" "%V"'
+		cmd=PYTHON_COMMAND
+		cmd=cmd+'"'+HERE+os.sep+'newfiles.py" "'+name+'" "%V"'
 		submenuKey=winreg.CreateKey(subkey,keyname)
 		winreg.SetValueEx(submenuKey,'MUIVerb',0,winreg.REG_SZ,name)
 		icon=getTemplateIcon(name)
-		if icon is None and UNKNOWN_ICON_PATH!=None:
+		if icon is None and UNKNOWN_ICON_PATH is not None:
 			icon=UNKNOWN_ICON_PATH
-		if icon!=None:
+		if icon is not None:
 			winreg.SetValueEx(submenuKey,'Icon',0,winreg.REG_SZ,icon)
 		#winreg.SetValueEx(submenuKey,'NoWorkingDirectory',0,winreg.REG_SZ,'')
 		submenuKey=winreg.CreateKey(submenuKey,'command')

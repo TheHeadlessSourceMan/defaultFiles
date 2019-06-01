@@ -17,7 +17,7 @@ if __name__ == '__main__':
 	import sys
 	import os
 	here=os.path.dirname(os.path.realpath( __file__ ))
-	sys.path.append(here) 
+	sys.path.append(here)
 	name='defaultFiles'
 	plainTemplates='plainTemplates'
 	squareTemplates='squareTemplates'

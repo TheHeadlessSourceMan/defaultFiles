@@ -4,7 +4,7 @@ This is the set of available plain templates
 import os
 
 
-class PlainTemplates(object):
+class PlainTemplates:
 	"""
 	This is the set of available plain templates
 	"""
@@ -24,7 +24,7 @@ class PlainTemplates(object):
 		"""
 		for f in os.listdir(PlainTemplates.DIRECTORY):
 			shortName=f.rsplit('.',1)[0]
-			if shortName==name or f==name:
+			if name in (shortName,f):
 				return PlainTemplate(f,shortName)
 		return None
 
@@ -39,7 +39,7 @@ class PlainTemplates(object):
 		return ret
 
 
-class PlainTemplate(object):
+class PlainTemplate:
 	"""
 	A single plain template
 	"""
@@ -65,7 +65,7 @@ class PlainTemplate(object):
 		get the directory
 		"""
 		d=PlainTemplates.DIRECTORY+os.sep+self.filename
-		print d
+		print(d)
 		return d
 
 	def shouldIgnore(self,file):

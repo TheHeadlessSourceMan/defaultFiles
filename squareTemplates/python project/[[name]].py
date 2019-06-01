@@ -25,11 +25,11 @@ if __name__ == '__main__':
 				if arg in ['-h','--help']:
 					printhelp=True
 				else:
-					print 'ERR: unknown argument "'+arg+'"'
+					print(('ERR: unknown argument "'+arg+'"'))
 			else:
-				print 'ERR: unknown argument "'+arg+'"'
+				print(('ERR: unknown argument "'+arg+'"'))
 	if printhelp:
-		print 'Usage:'
-		print '  [[name]].py [options]'
-		print 'Options:'
-		print '   NONE'
+		print('Usage:')
+		print('  [[name]].py [options]')
+		print('Options:')
+		print('   NONE')

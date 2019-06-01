@@ -1,0 +1,26 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html>
+<head>
+<meta charset="UTF-8">
+<title>[[app_name]]</title>
+<script language="JavaScript"><!--
+	.python, python {display:none} // hides python code when not run as an application
+//--></script>
+<style type="text/css">
+	.indent, body {margin-left:1.5cm}
+</style>
+</head>
+<body>
+<h1>[[app_name]]</h1>
+
+<!-- warning boilerplate -->
+<span class="nopython">
+This ui only works in python htmlui.  To use it, run <b>[[filename]].py</b>.
+</span>
+
+<!-- main app code -->
+
+<!-- an exit button -->
+<input type="button" onclick="python('exit');" value="Exit" />
+</body>
+</html>
